@@ -1,4 +1,4 @@
-use encoding_rs::GBK;
+use encoding_rs::{GBK, UTF_8};
 use std::{
     env, fs,
     io::{self},
@@ -14,18 +14,14 @@ fn main() -> io::Result<()> {
     let file_path = &args[1];
     let content = fs::read(file_path)?;
 
-    match std::str::from_utf8(&content) {
-        Ok(_) => {}
-        Err(_) => {
-            let (result, _, failed) = GBK.decode(&content);
-            if failed {
-                println!("Failed to decode file as GBK: {}", file_path);
-                return Ok(());
-            }
-
-            fs::write(file_path, result.into_owned())?;
+    let (_, _, not_utf8) = UTF_8.decode(&content);
+    if not_utf8 {
+        let (result, _, not_gbk) = GBK.decode(&content);
+        if not_gbk {
+            println!("Failed to decode file as GBK: {}", file_path);
+            return Ok(());
         }
+        fs::write(file_path, result.into_owned())?;
     }
-
     Ok(())
 }
